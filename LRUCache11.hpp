@@ -36,6 +36,7 @@
 #include <stdexcept>
 #include <thread>
 #include <unordered_map>
+#include <iostream>
 
 namespace lru11 {
 /*
@@ -173,7 +174,12 @@ class Cache {
     Guard g(lock_);
     const auto iter = cache_.find(k);
     if (iter == cache_.end()) {
-      throw KeyNotFound();
+      #ifdef NOEXCEPT
+        std::cerr << "Key not found, abort" << std::endl;
+        std::exit(1);
+      #else
+        throw KeyNotFound();
+      #endif
     }
     keys_.splice(keys_.begin(), keys_, iter->second);
     return iter->second->value;
