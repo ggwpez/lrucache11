@@ -112,6 +112,36 @@ class Cache {
     cache_.clear();
     keys_.clear();
   }
+
+  #ifdef ENABLE_HITRATE
+  	uint64_t hit = 0, miss = 0;
+  #endif
+
+  template<typename F>
+  Value call(F const& fptr, Key&& k) {
+    Value v;
+	if (! tryGet(k, v))
+	{
+	  #ifdef ENABLE_HITRATE
+	    ++miss;
+	  #endif
+	  v = std::apply(fptr, k);
+	  insert(k, v);
+	}
+	  else
+	{
+	  #ifdef ENABLE_HITRATE
+	    ++hit;
+	  #endif
+	}
+
+	#if ENABLE_HITRATE
+	  if (! ((hit +miss) % 50000))
+	    std::cerr << "Hit: " << hit << " Miss: " << miss << " Hitrate: " << ((double)(hit) /(hit +miss)) *100 << "%" << std::endl;
+	#endif
+
+	  return v;
+  }
   void insert(const Key& k, const Value& v) {
     Guard g(lock_);
     const auto iter = cache_.find(k);
